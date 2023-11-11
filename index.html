@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Splitter</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 50px;
+        }
+
+        #app {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        div {
+            margin-bottom: 15px;
+        }
+
+        label {
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        .item-card {
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-container label {
+            margin-right: 15px;
+        }
+
+        .checkbox-container input {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div>
+            <label for="personName">Person:</label>
+            <input type="text" id="personName">
+            <button onclick="addPerson()">Add Person</button>
+        </div>
+        <div>
+            <label for="itemName">Item:</label>
+            <input type="text" id="itemName">
+            <label for="itemPrice">Price:</label>
+            <input type="number" id="itemPrice">
+            <button onclick="addItem()">Add Item</button>
+        </div>
+        <div id="result"></div>
+        <button onclick="calculate()">Calculate</button>
+    </div>
+    <script>
+        let people = [];
+        let items = [];
+
+        function addPerson() {
+            const personName = document.getElementById('personName').value;
+            if (personName.trim() !== '') {
+                people.push(personName);
+                updateDisplay();
+                document.getElementById('personName').value = '';
+            }
+        }
+
+        function addItem() {
+            const itemName = document.getElementById('itemName').value;
+            const itemPrice = parseFloat(document.getElementById('itemPrice').value);
+
+            if (itemName.trim() !== '' && !isNaN(itemPrice) && itemPrice > 0) {
+                items.push({ name: itemName, price: itemPrice, participants: [] });
+                updateDisplay();
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemPrice').value = '';
+            }
+        }
+
+        function calculate() {
+            for (const item of items) {
+                const checkboxes = document.querySelectorAll(`input[name="${item.name}"]:checked`);
+                const numParticipants = checkboxes.length;
+
+                if (numParticipants > 0) {
+                    const pricePerPerson = item.price / numParticipants;
+
+                    checkboxes.forEach((checkbox) => {
+                        const personName = checkbox.value;
+                        const personIndex = people.indexOf(personName);
+
+                        if (personIndex !== -1) {
+                            people.splice(personIndex, 1);
+                        }
+
+                        item.participants.push({ name: personName, share: pricePerPerson });
+                    });
+                }
+            }
+
+            displayResult();
+        }
+
+        function updateDisplay() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            people.forEach((person) => {
+                resultDiv.innerHTML += `<div>${person}</div>`;
+            });
+
+            items.forEach((item) => {
+                resultDiv.innerHTML += `
+                    <div class="item-card">
+                        <div>${item.name}: ${item.price}</div>
+                        <div class="checkbox-container">
+                            ${people.map(person => `
+                                <label>
+                                    <input type="checkbox" name="${item.name}" value="${person}">
+                                    ${person}
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function displayResult() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            items.forEach((item) => {
+                resultDiv.innerHTML += `<div>${item.name}: ${item.price}</div>`;
+
+                item.participants.forEach((participant) => {
+                    resultDiv.innerHTML += `<div>${participant.name} owes ${participant.share}</div>`;
+                });
+            });
+
+            const totalOwes = {};
+            items.forEach((item) => {
+                item.participants.forEach((participant) => {
+                    if (!totalOwes[participant.name]) {
+                        totalOwes[participant.name] = 0;
+                    }
+                    totalOwes[participant.name] += participant.share;
+                });
+            });
+
+            resultDiv.innerHTML += '<div><strong>Total Owes:</strong></div>';
+            Object.keys(totalOwes).forEach((person) => {
+                resultDiv.innerHTML += `<div>${person}: ${totalOwes[person]}</div>`;
+            });
+
+            // Return the results as JSON
+            console.log(getResultsAsJson());
+        }
+
+        function getResultsAsJson() {
+            const results = {
+                people: people,
+                items: items
+            };
+            Telegram.WebApp.ready();
+            Telegram.WebApp.MainButton.setText('Price Calculate').show().onClick(function () {
+                const data = JSON.stringify(results, null, 2);
+                Telegram.WebApp.sendData(data);
+                Telegram.WebApp.close();
+            });
+            return JSON.stringify(results, null, 2);
+        }
+    </script>
+<script type="text/javascript">
+    Telegram.WebApp.expand();
+</script>
+</body>
+</html>
