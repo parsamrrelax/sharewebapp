@@ -100,6 +100,7 @@ function displayResult() {
 
     // Return the results as JSON
     console.log(getResultsAsJson());
+    sendToTelegram();
 }
 
 function getResultsAsJson() {
@@ -107,11 +108,13 @@ function getResultsAsJson() {
         people: people,
         items: items
     };
+    return JSON.stringify(results, null, 2);
+}
+
+function sendToTelegram() {
     Telegram.WebApp.ready();
     Telegram.WebApp.MainButton.setText('Price Calculate').show().onClick(function () {
-        const data = JSON.stringify(results, null, 2);
-        Telegram.WebApp.sendData(data);
+        Telegram.WebApp.sendData(getResultsAsJson());
         Telegram.WebApp.close();
     });
-    return JSON.stringify(results, null, 2);
 }
