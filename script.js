@@ -101,26 +101,6 @@ function displayResult() {
     // Return the results as JSON
     console.log(getResultsAsJson());
 }
-function loadTelegramWebAppScript() {
-    const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-web-app.js';
-    script.async = true;
-    script.onload = function () {
-        // The Telegram Web App script has been successfully loaded
-        console.log('Telegram Web App script has been loaded.');
-        // Add any further logic you need after the script is loaded
-    };
-    script.onerror = function () {
-        // An error occurred while loading the script
-        console.error('Error loading Telegram Web App script.');
-        // Handle the error or retry loading if necessary
-    };
-
-    document.head.appendChild(script);
-}
-
-// Call the function to load the Telegram Web App script
-loadTelegramWebAppScript();
 
 function getResultsAsJson() {
     const results = {
